@@ -9,6 +9,7 @@ from models.userstate import State
 with open("conf/fields.json", "r") as file:
     FIELDS = json.load(file)
 
+
 def collect_field(llm, state, field):
     if type(state) is not dict:
         state = state[0]
@@ -31,6 +32,7 @@ def collect_field(llm, state, field):
             sys.exit(0)
         return {**state, "retry_count": retry_count, "history": history}, None
     return {**state, field: value, "retry_count": 0, "history": history}, True
+
 
 def collect_field_visual(llm, state, node, field):
     if type(state) is not dict:
@@ -63,6 +65,7 @@ def handle_node_entry(state: State, node_name: str) -> State:
         return {**state, "retry_count": 0, "current_node": node_name}
     return state
 
+
 def collect_name(llm, state):
     state = handle_node_entry(state, "collect_name")
     new_state, result = collect_field(llm, state, "name")
@@ -71,16 +74,18 @@ def collect_name(llm, state):
 
 
 def service_choice(llm, state):
-    state = handle_node_entry(state, "service_choice") 
+    state = handle_node_entry(state, "service_choice")
     new_state, result = collect_field(llm, state, "service_type")
     new_state["service_choice_result"] = result
     new_state["service_value"] = (new_state.get("service") or "").lower()
     return new_state
 
+
 def check_in_booking(llm, state):
     state = handle_node_entry(state, "check_in_booking_node")
     new_state, result = collect_field_visual(llm, state, "check_in", "booking_details")
     return new_state
+
 
 def check_in_visual(llm, state):
     state = handle_node_entry(state, "check_in_visual_node")

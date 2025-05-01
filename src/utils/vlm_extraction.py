@@ -2,11 +2,13 @@ import base64
 from langchain_openai import ChatOpenAI
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
 
+
 def encode_image_to_base64(image_path):
     with open(image_path, "rb") as img_file:
         image_data = img_file.read()
         image_b64 = base64.b64encode(image_data).decode("utf-8")
     return image_b64
+
 
 def extract_details_with_vllm(image_path, data_format):
     image_b64 = encode_image_to_base64(image_path)
@@ -14,7 +16,7 @@ def extract_details_with_vllm(image_path, data_format):
     image_url = f"data:image/png;base64,{image_b64}"
 
     response_schemas = [ResponseSchema(name=field['name'], description=field["description"]) for field in data_format]
-    
+
     output_parser = StructuredOutputParser.from_response_schemas(response_schemas)
     format_instructions = output_parser.get_format_instructions()
     prompt = f"{prompt}\n{format_instructions}"
@@ -40,10 +42,6 @@ def extract_details_with_vllm(image_path, data_format):
     result = llm.invoke(messages)
     try:
         structured_response = output_parser.parse(result.content)
-    except Exception as e:
+    except Exception:
         structured_response = {field["name"]: None for field in response_schemas}
     return structured_response
-
-# # Usage
-# details = extract_booking_details_vllm("/Users/siddarthreddy/Downloads/booking.png")
-# print("Final Extracted Details:", details)

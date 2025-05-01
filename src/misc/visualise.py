@@ -1,7 +1,8 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 
-def visualize_workflow(workflow):    
+
+def visualize_workflow(workflow):
     graph = workflow.get_graph()
     G = nx.DiGraph()
     for node in graph.nodes:
@@ -14,6 +15,7 @@ def visualize_workflow(workflow):
     nx.draw(G, pos, with_labels=True, node_size=2000, node_color="lightblue", font_size=10, font_weight="bold", arrows=True)
     plt.title("Workflow Graph")
     plt.show()
+
 
 def generate_mermaid_code(workflow):
     mermaid_code = workflow.get_graph().draw_mermaid()

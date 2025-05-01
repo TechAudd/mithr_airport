@@ -1,5 +1,6 @@
 from typing_extensions import TypedDict
 
+
 class State(TypedDict):
     name: str
     service_type: str

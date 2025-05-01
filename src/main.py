@@ -4,17 +4,15 @@ from langchain_openai import ChatOpenAI
 from langsmith import traceable
 from functools import partial
 
-import pdb
-from pprint import pprint as pp
-
 from nodes.routes import (
-    service_choice_router, 
-    collect_name_router, 
+    service_choice_router,
+    collect_name_router,
     check_in_booking_router,
-    check_in_visual_router)
+    check_in_visual_router
+)
 from models.userstate import State
-from misc.visualise import generate_mermaid_code, visualize_workflow
 from nodes.node_functions import collect_name, service_choice, check_in_booking, check_in_visual
+# from misc.visualise import generate_mermaid_code, visualize_workflow
 
 
 os.environ["LANGCHAIN_PROJECT"] = "MITHR"
@@ -28,11 +26,14 @@ llm = ChatOpenAI(
     temperature=1.0,
 )
 
+
 def book_ticket(llm, state):
     return state
 
+
 def general_query(llm, state):
     return state
+
 
 workflow = StateGraph(State)
 workflow.add_node("collect_name", partial(collect_name, llm))
@@ -75,8 +76,10 @@ state = State(
 )
 # compiled_workflow.get_graph().draw_png("workflow_graph.png")
 
+
 @traceable(run_type="chain", name="BookingWorkflow")
 def run_workflow(state):
     return compiled_workflow.invoke(state)
+
 
 run_workflow(state)
