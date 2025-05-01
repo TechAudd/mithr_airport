@@ -1,0 +1,28 @@
+{
+    "name": {
+        "description": "your full name required for moving forward",
+        "optional": false
+    },
+    "service_type": {
+        "description": "which service you want to use (check_in or book_ticket or general_query)",
+        "optional": false
+    },
+    "booking_details": {
+        "description": "booking confirmation document sent by airline in image format",
+        "optional": false,
+        "data_format": [
+            {"name": "passenger_name", "description": "Name of the passenger"},
+            {"name": "pnr_no", "description": "Passenger's Airline PNR"},
+            {"name": "booking_id", "description": "Booking ID of the passenger"}
+        ]
+    },
+    "aadhar_details": {
+        "description": "aadhar card image for verification",
+        "optional": false,
+        "data_format": [
+            {"name": "aadhar_no", "description": "Aadhar number of the passenger"},
+            {"name": "dob", "description": "Date of birth of the passenger"},
+            {"name": "name", "description": "Name of the passenger as per aadhar"}
+        ]
+    }
+}
