@@ -9,14 +9,18 @@ from models.userstate import State
 with open("conf/fields.json", "r") as file:
     FIELDS = json.load(file)
 
+with open("conf/mock.json", "r") as file:
+    MOCK_DATA = json.load(file)
 
-def collect_field(llm, state, field):
+
+def collect_field(llm, state, field, options=None, greeting=False):
     if type(state) is not dict:
         state = state[0]
     retry_count = state.get("retry_count", 0)
     history = state.get("history", [])
     field_desc = FIELDS[field]["description"]
-    question = ask_llm_for_question(llm, field, field_desc, history, retry_count)
+    field_desc += f" from the following options: {str(options)}" if options else ""
+    question = ask_llm_for_question(llm, field, field_desc, history, retry_count, greeting)
     print("Bot:", question)
     user_input = input("You: ")
     history.append(AIMessage(content=question))
@@ -31,7 +35,7 @@ def collect_field(llm, state, field):
             print("Bot: Exiting the chat as the information is required to proceed further.")
             sys.exit(0)
         return {**state, "retry_count": retry_count, "history": history}, None
-    return {**state, field: value, "retry_count": 0, "history": history}, True
+    return {**state, field: value, "retry_count": 0, "history": history}, value
 
 
 def collect_field_visual(llm, state, node, field):
@@ -46,6 +50,7 @@ def collect_field_visual(llm, state, node, field):
     history.append(AIMessage(content=question))
     details = extract_details_with_vllm(image_path, data_format=FIELDS[field]["data_format"])
     history.append(HumanMessage(content=str(details)))
+    history.append(HumanMessage(content=f"Here are my {field} details converted to json."))
     if not details or any(value is None for value in details.values()):
         retry_count = state.get("retry_count", 0) + 1
         if retry_count == 2:
@@ -61,6 +66,7 @@ def collect_field_visual(llm, state, node, field):
 
 
 def handle_node_entry(state: State, node_name: str) -> State:
+    print(f"Entering node: {node_name}")
     if state.get("current_node") != node_name:
         return {**state, "retry_count": 0, "current_node": node_name}
     return state
@@ -68,7 +74,7 @@ def handle_node_entry(state: State, node_name: str) -> State:
 
 def collect_name(llm, state):
     state = handle_node_entry(state, "collect_name")
-    new_state, result = collect_field(llm, state, "name")
+    new_state, result = collect_field(llm, state, "name", greeting=True)
     new_state["collect_name_result"] = result
     return new_state
 
@@ -87,7 +93,23 @@ def check_in_booking(llm, state):
     return new_state
 
 
-def check_in_visual(llm, state):
-    state = handle_node_entry(state, "check_in_visual_node")
-    new_state, result = collect_field_visual(llm, state, "check_in", "aadhar_details")
+def check_in_passport(llm, state):
+    state = handle_node_entry(state, "check_in_passport_node")
+    new_state, result = collect_field_visual(llm, state, "check_in", "passport_details")
     return new_state
+
+
+def seat_preference(llm, state):
+    state = handle_node_entry(state, "seat_preference_node")
+    if not state['check_in']['passenger_details']['seat_no']:
+        avilable_seats = MOCK_DATA['seats_data']['available']
+        new_state, result = collect_field(llm, state, "seat_no", avilable_seats)
+        selected_seat = result
+        if selected_seat is not None and selected_seat in avilable_seats:
+            new_state["check_in"]["passenger_details"]["seat_no"] = result
+        else:
+            history = state.get("history", [])
+            history.append(AIMessage(content="Please select a valid seat from the available options."))
+            state["history"] = history
+        return new_state
+    return state

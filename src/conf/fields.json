@@ -13,16 +13,22 @@
         "data_format": [
             {"name": "passenger_name", "description": "Name of the passenger"},
             {"name": "pnr_no", "description": "Passenger's Airline PNR"},
+            {"name": "ticket_no", "description": "ticket number of the booking"},
             {"name": "booking_id", "description": "Booking ID of the passenger"}
         ]
     },
-    "aadhar_details": {
-        "description": "aadhar card image for verification",
+    "seat_no": {
+        "description": "seat number prefernce of the passenger",
+        "optional": false
+    },
+    "passport_details": {
+        "description": "passport image required for check-in",
         "optional": false,
         "data_format": [
-            {"name": "aadhar_no", "description": "Aadhar number of the passenger"},
+            {"name": "name", "description": "Name of the passenger"},
             {"name": "dob", "description": "Date of birth of the passenger"},
-            {"name": "name", "description": "Name of the passenger as per aadhar"}
+            {"name": "nationality", "description": "nationality of the passenger"},
+            {"name": "passport_expiry_date", "description": "Passport expiry date of the passenger"}
         ]
     }
 }

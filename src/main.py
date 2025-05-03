@@ -1,5 +1,5 @@
 import os
-from langgraph.graph import StateGraph, START
+from langgraph.graph import StateGraph, START, END
 from langchain_openai import ChatOpenAI
 from langsmith import traceable
 from functools import partial
@@ -8,10 +8,15 @@ from nodes.routes import (
     service_choice_router,
     collect_name_router,
     check_in_booking_router,
-    check_in_visual_router
+    check_in_passport_router,
+    seat_preference_router,
 )
 from models.userstate import State
-from nodes.node_functions import collect_name, service_choice, check_in_booking, check_in_visual
+from nodes.node_functions import (
+    collect_name, service_choice, 
+    check_in_booking, check_in_passport, 
+    seat_preference
+)
 # from misc.visualise import generate_mermaid_code, visualize_workflow
 
 
@@ -35,36 +40,40 @@ def general_query(llm, state):
     return state
 
 
+def luggage_checkin(llm, state):
+    print("Luggage check-in")
+    return state
+
+
+def payment_gateway(llm, state):
+    return state
+
+
 workflow = StateGraph(State)
 workflow.add_node("collect_name", partial(collect_name, llm))
 workflow.add_node("service_choice", partial(service_choice, llm))
 workflow.add_node("check_in_booking_node", partial(check_in_booking, llm))
-workflow.add_node("check_in_visual_node", partial(check_in_visual, llm))
+workflow.add_node("check_in_passport_node", partial(check_in_passport, llm))
+workflow.add_node("seat_preference_node", partial(seat_preference, llm))
+workflow.add_node("luggage_checkin_node", partial(luggage_checkin, llm))
 workflow.add_node("book_ticket_node", partial(book_ticket, llm))
+workflow.add_node("payment_gateway_node", partial(payment_gateway, llm))
 workflow.add_node("general_query_node", partial(general_query, llm))
 workflow.set_entry_point("collect_name")
 
 workflow.add_edge(START, "collect_name")
 workflow.add_conditional_edges("collect_name", collect_name_router, ["collect_name", "service_choice"])
-workflow.add_conditional_edges(
-    "service_choice",
-    service_choice_router,
-    ["service_choice", "check_in_booking_node", "book_ticket_node", "general_query_node"]
-)
-workflow.add_edge("book_ticket_node", "general_query_node")
-workflow.add_conditional_edges(
-    "check_in_booking_node",
-    check_in_booking_router,
-    ["check_in_booking_node", "check_in_visual_node"]
-)
-workflow.add_conditional_edges(
-    "check_in_visual_node",
-    check_in_visual_router,
-    ["check_in_visual_node", "general_query_node"]
-)
-workflow.add_edge("check_in_visual_node", "general_query_node")
+workflow.add_conditional_edges("service_choice", service_choice_router,
+                               ["service_choice", "check_in_booking_node", "book_ticket_node", "general_query_node"])
+workflow.add_conditional_edges("check_in_booking_node", check_in_booking_router, ["check_in_booking_node", "check_in_passport_node", END])
+workflow.add_conditional_edges("check_in_passport_node", check_in_passport_router, ["check_in_passport_node", "seat_preference_node"])
+workflow.add_conditional_edges("seat_preference_node", seat_preference_router, ["seat_preference_node", "luggage_checkin_node"])
+workflow.add_edge("luggage_checkin_node", "payment_gateway_node")
+workflow.add_edge("book_ticket_node", "payment_gateway_node")
+workflow.add_edge("payment_gateway_node", "general_query_node")
 
 compiled_workflow = workflow.compile()
+compiled_workflow.get_graph().draw_png("workflow_graph.png")
 
 state = State(
     name=None,

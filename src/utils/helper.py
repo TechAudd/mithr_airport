@@ -2,27 +2,28 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import json
 
 
-def ask_llm_for_question(llm, field, field_description, history, retry_count=0):
+def ask_llm_for_question(llm, field, field_description, history, retry_count=0, greeting=False):
     if retry_count == 0:
         system_prompt = (
             "You are a helpful assistant collecting information from a user. "
             f"Ask the user for {field_description} in a natural, conversational way. "
-            "Do not mention the field name directly. Be friendly and concise."
-            "If the history is present, the question should sound like a follow-up "
-            "to the previous conversation and if it is absent then start by greeting them.")
+            "Do not mention the field name directly. Be friendly and concise.")
     else:
         system_prompt = (
             "You are a helpful assistant collecting information from a user. "
             f"The user did not provide a clear answer to the request for {field_description}. "
             "Politely ask again or clarify what you need, in a conversational way. "
             "Do not mention the field name directly. Be friendly and concise."
-            "If the history is present, the question should sound like a follow-up "
-            "to the previous conversation and if it is absent then start by greeting them."
             "If the user refuses to answer, explain why it's needed and ask again. ")
+
+    if greeting:
+        system_prompt = "Start the conversation with a friendly hello and ask for the mentioned information." + system_prompt
+    else:
+        system_prompt = "Do not greet as this will go mid conversation and ask for the mentioned information." + system_prompt
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
         MessagesPlaceholder(variable_name="history"),
-        ("human", "Ask for the information.")
+        # ("human", "Ask for the information mentioned in the system prompt dont ask for anything more.")
     ])
     response = prompt | llm
     bot_message = response.invoke({"history": history}).content
