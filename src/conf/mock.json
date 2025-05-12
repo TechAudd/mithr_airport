@@ -3,6 +3,7 @@
         "VTJ3RW/1/1": {
             "name": "Mr. Venkat Surendar Talaru",
             "pnr_no": "VTJ3RW",
+            "type": "domestic",
             "seat_no": null,
             "luggage_allowance": {
                 "cabin_baggage": "7 kg",

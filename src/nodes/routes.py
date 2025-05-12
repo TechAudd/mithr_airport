@@ -42,7 +42,9 @@ def check_in_booking_router(state):
 
 def check_in_passport_router(state):
     passport_details = state.get("check_in", {}).get("passport_details")
-    if not passport_details or any(value is None for value in passport_details.values()):
+    aadhar_details = state.get("check_in", {}).get("aadhar_details")
+    govt_id = passport_details or aadhar_details
+    if not govt_id or any(value is None for value in govt_id.values()):
         return "check_in_passport_node"
     return "seat_preference_node"
 
@@ -52,3 +54,9 @@ def seat_preference_router(state):
     if seat_preference:
         return "luggage_checkin_node"
     return "seat_preference_node"
+
+def booking_router(state):
+    pass
+
+def luggage_router(state):
+    pass

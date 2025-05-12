@@ -10,12 +10,13 @@ from nodes.routes import (
     check_in_booking_router,
     check_in_passport_router,
     seat_preference_router,
+    booking_router, luggage_router
 )
 from models.userstate import State
 from nodes.node_functions import (
     collect_name, service_choice, 
     check_in_booking, check_in_passport, 
-    seat_preference
+    seat_preference, book_ticket
 )
 # from misc.visualise import generate_mermaid_code, visualize_workflow
 
@@ -28,13 +29,8 @@ llm = ChatOpenAI(
     openai_api_key="EMPTY",
     openai_api_base="http://10.45.100.6:8000/v1",
     max_tokens=128,
-    temperature=1.0,
+    temperature=0.1,
 )
-
-
-def book_ticket(llm, state):
-    return state
-
 
 def general_query(llm, state):
     return state
@@ -69,6 +65,8 @@ workflow.add_conditional_edges("check_in_booking_node", check_in_booking_router,
 workflow.add_conditional_edges("check_in_passport_node", check_in_passport_router, ["check_in_passport_node", "seat_preference_node"])
 workflow.add_conditional_edges("seat_preference_node", seat_preference_router, ["seat_preference_node", "luggage_checkin_node"])
 workflow.add_edge("luggage_checkin_node", "payment_gateway_node")
+# workflow.add_conditional_edges("book_ticket_node", booking_router, ["book_ticket_node", "check_in_passport_node"])
+# workflow.add_conditional_edges("luggage_checkin_node", luggage_router, ["payment_gateway_node", "general_query_node"])
 workflow.add_edge("book_ticket_node", "payment_gateway_node")
 workflow.add_edge("payment_gateway_node", "general_query_node")
 
@@ -80,6 +78,7 @@ state = State(
     service_type=None,
     check_in={},
     ticket_booking={},
+    amount=0,
     history=[],
     retry_count=0
 )

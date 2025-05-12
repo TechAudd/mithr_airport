@@ -1,6 +1,6 @@
 {
     "name": {
-        "description": "your full name required for moving forward",
+        "description": "your full name as it appears on government issued id is required for moving forward",
         "optional": false
     },
     "service_type": {
@@ -21,6 +21,14 @@
         "description": "seat number prefernce of the passenger",
         "optional": false
     },
+    "ticket_type": {
+        "description": "type of ticket (one_way or round_trip)",
+        "optional": false
+    },
+    "destination": {
+        "description": "destination of the passenger",
+        "optional": false
+    },
     "passport_details": {
         "description": "passport image required for check-in",
         "optional": false,
@@ -29,6 +37,15 @@
             {"name": "dob", "description": "Date of birth of the passenger"},
             {"name": "nationality", "description": "nationality of the passenger"},
             {"name": "passport_expiry_date", "description": "Passport expiry date of the passenger"}
+        ]
+    },
+    "aadhar_details": {
+        "description": "aadhar image required for check-in",
+        "optional": false,
+        "data_format": [
+            {"name": "name", "description": "Name of the passenger"},
+            {"name": "dob", "description": "Date of birth of the passenger"},
+            {"name": "aadhar_no", "description": "Aadhar number of the passenger"}
         ]
     }
 }

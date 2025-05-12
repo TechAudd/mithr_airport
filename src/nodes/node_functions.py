@@ -1,6 +1,9 @@
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain.output_parsers import ResponseSchema, StructuredOutputParser
+from langchain.prompts import ChatPromptTemplate
 import json
 import sys
+import pdb
 
 from utils.vlm_extraction import extract_details_with_vllm
 from utils.helper import ask_llm_for_question, extract_field_and_refusal_with_json
@@ -12,21 +15,24 @@ with open("conf/fields.json", "r") as file:
 with open("conf/mock.json", "r") as file:
     MOCK_DATA = json.load(file)
 
+with open("conf/flights.json", "r") as file:
+    FLIGHT_DATA = json.load(file)
 
-def collect_field(llm, state, field, options=None, greeting=False):
+def collect_field(llm, state, field, options=None, greeting=False, node=None, retry_count=None, optional=False):
     if type(state) is not dict:
         state = state[0]
-    retry_count = state.get("retry_count", 0)
+    if retry_count is None:
+        retry_count = state.get("retry_count", 0)
     history = state.get("history", [])
     field_desc = FIELDS[field]["description"]
     field_desc += f" from the following options: {str(options)}" if options else ""
-    question = ask_llm_for_question(llm, field, field_desc, history, retry_count, greeting)
+    question = ask_llm_for_question(llm, field, field_desc, state, retry_count, greeting)
     print("Bot:", question)
     user_input = input("You: ")
     history.append(AIMessage(content=question))
     history.append(HumanMessage(content=user_input))
     value, refused = extract_field_and_refusal_with_json(llm, field, field_desc, user_input)
-    if refused or not value:
+    if refused or not value or (value == "None" and not optional):
         retry_count = state.get("retry_count", 0) + 1
         if retry_count == 2:
             print("Bot: This information is required to proceed further and chat will terminate if not provided. Could you please provide it?")
@@ -35,7 +41,11 @@ def collect_field(llm, state, field, options=None, greeting=False):
             print("Bot: Exiting the chat as the information is required to proceed further.")
             sys.exit(0)
         return {**state, "retry_count": retry_count, "history": history}, None
-    return {**state, field: value, "retry_count": 0, "history": history}, value
+    if node:
+        state[node][field] = value
+        return {**state, "retry_count": 0, "history": history}, value
+    else:
+        return {**state, field: value, "retry_count": 0, "history": history}, value
 
 
 def collect_field_visual(llm, state, node, field):
@@ -44,7 +54,7 @@ def collect_field_visual(llm, state, node, field):
     retry_count = state.get("retry_count", 0)
     history = state.get("history", [])
     field_desc = FIELDS[field]["description"]
-    question = ask_llm_for_question(llm, field, field_desc, history, retry_count)
+    question = ask_llm_for_question(llm, field, field_desc, state, retry_count)
     print("Bot:", question)
     image_path = input("Please provide the path to the image: ")
     history.append(AIMessage(content=question))
@@ -67,6 +77,7 @@ def collect_field_visual(llm, state, node, field):
 
 def handle_node_entry(state: State, node_name: str) -> State:
     print(f"Entering node: {node_name}")
+    print(f"Current state: {state}")
     if state.get("current_node") != node_name:
         return {**state, "retry_count": 0, "current_node": node_name}
     return state
@@ -95,7 +106,11 @@ def check_in_booking(llm, state):
 
 def check_in_passport(llm, state):
     state = handle_node_entry(state, "check_in_passport_node")
-    new_state, result = collect_field_visual(llm, state, "check_in", "passport_details")
+    type = state.get("check_in", {}).get("passenger_details", {}).get("type")
+    if type == "domestic":
+        new_state, result = collect_field_visual(llm, state, "check_in", "aadhar_details")
+    else:
+        new_state, result = collect_field_visual(llm, state, "check_in", "passport_details")
     return new_state
 
 
@@ -113,3 +128,60 @@ def seat_preference(llm, state):
             state["history"] = history
         return new_state
     return state
+
+def check_destination(llm, state):
+    cities = list(FLIGHT_DATA.keys())
+    destination = state["ticket_booking"]["destination"]
+    if destination.lower() in cities:
+        return destination.lower()
+    else:
+        cities_str = ", ".join(cities) if isinstance(cities, list) else str(cities)
+        if isinstance(destination, (tuple, list)):
+            destination = destination[0]
+        prompt = ChatPromptTemplate.from_template(
+            "The user has provided a destination '{destination}' "
+            "which does not resemble any of the available cities in my list: {cities_str}. "
+            "Check if the user has provided a valid destination. "
+            "Return None if the destination is not in the list of available cities. "
+            "If the destination is in the list, return the correct destination from the list.\n"
+            "{format_instructions}"
+        )
+
+
+        response_schemas = [
+            ResponseSchema(name="correct_destination", description="Correct destination if invalid.")
+        ]
+        output_parser = StructuredOutputParser.from_response_schemas(response_schemas)
+        format_instructions = output_parser.get_format_instructions()
+        chain = prompt | llm | output_parser
+
+        response = chain.invoke({
+            "destination":destination,
+            "cities_str":cities_str,
+            "format_instructions":format_instructions
+        })
+        if response["correct_destination"] is None:
+            return None
+        elif response["correct_destination"].lower() in cities:
+            return response["correct_destination"].lower()
+        else:
+            return None
+
+
+def book_ticket(llm, state):
+    state = handle_node_entry(state, "book_ticket_node")
+    state, result = collect_field(llm, state, "ticket_type", node="ticket_booking")
+    new_state, result = collect_field(llm, state, "destination", node="ticket_booking")
+    destination = check_destination(llm, new_state)
+    if destination is None:
+        new_state["ticket_booking"]["destination"] = None
+        bot_message = "My sincere apologies but currently we don't opearate at that destination. Is there anything else I can help you with?"
+        print(f"Bot: {bot_message}")
+    else:
+        print(f"Bot: Your options are {FLIGHT_DATA[destination]}")
+    return new_state
+
+# def destination(llm, state):
+#     state = handle_node_entry(state, "destination_node")
+#     new_state, result = collect_field(llm, state, "destination", node="book_ticket_node")
+#     return new_state

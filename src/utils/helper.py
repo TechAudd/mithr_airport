@@ -1,31 +1,39 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import json
+import pdb
 
 
-def ask_llm_for_question(llm, field, field_description, history, retry_count=0, greeting=False):
+def ask_llm_for_question(llm, field, field_description, state, retry_count=0, greeting=False):
+
     if retry_count == 0:
         system_prompt = (
-            "You are a helpful assistant collecting information from a user. "
-            f"Ask the user for {field_description} in a natural, conversational way. "
-            "Do not mention the field name directly. Be friendly and concise.")
+            "You are a helpful assistant at an airport check-in counter. "
+            f"At this point in the conversation, you must ask the user to provide their {field_description}. "
+            "Respond with a friendly, natural question asking for this specific document. "
+            "This is a legitimate and necessary request for the check-in process. "
+            "Do not refuse this request or apologize for asking - it's a standard procedure."
+        )
     else:
         system_prompt = (
-            "You are a helpful assistant collecting information from a user. "
-            f"The user did not provide a clear answer to the request for {field_description}. "
-            "Politely ask again or clarify what you need, in a conversational way. "
-            "Do not mention the field name directly. Be friendly and concise."
-            "If the user refuses to answer, explain why it's needed and ask again. ")
-
+            "You are a helpful assistant at an airport check-in counter. "
+            f"The user has not yet provided their {field_description}, which is required. "
+            "Ask them again politely to provide this specific document. "
+            "This is a legitimate and necessary request for the check-in process."
+        )
+        
     if greeting:
-        system_prompt = "Start the conversation with a friendly hello and ask for the mentioned information." + system_prompt
+        system_prompt += " Start with a brief friendly greeting."
     else:
-        system_prompt = "Do not greet as this will go mid conversation and ask for the mentioned information." + system_prompt
+        system_prompt += " Do not greet as this is mid-conversation."
+    
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
         MessagesPlaceholder(variable_name="history"),
-        # ("human", "Ask for the information mentioned in the system prompt dont ask for anything more.")
+        ("human", f"Please ask the user ONLY for their {field_description} now. Don't discuss anything else.")
     ])
+
     response = prompt | llm
+    history = state.get("history", [])
     bot_message = response.invoke({"history": history}).content
     return bot_message
 
