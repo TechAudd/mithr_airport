@@ -1,6 +1,7 @@
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
 from langchain.prompts import ChatPromptTemplate
+from pprint import pprint
 import json
 import sys
 import pdb
@@ -15,7 +16,7 @@ with open("conf/fields.json", "r") as file:
 with open("conf/mock.json", "r") as file:
     MOCK_DATA = json.load(file)
 
-with open("conf/flights.json", "r") as file:
+with open("conf/output.json", "r") as file:
     FLIGHT_DATA = json.load(file)
 
 def collect_field(llm, state, field, options=None, greeting=False, node=None, retry_count=None, optional=False):
@@ -76,8 +77,8 @@ def collect_field_visual(llm, state, node, field):
 
 
 def handle_node_entry(state: State, node_name: str) -> State:
-    print(f"Entering node: {node_name}")
-    print(f"Current state: {state}")
+    # print(f"Entering node: {node_name}")
+    # print(f"Current state: {state}")
     if state.get("current_node") != node_name:
         return {**state, "retry_count": 0, "current_node": node_name}
     return state
@@ -142,14 +143,15 @@ def check_destination(llm, state):
             "The user has provided a destination '{destination}' "
             "which does not resemble any of the available cities in my list: {cities_str}. "
             "Check if the user has provided a valid destination. "
-            "Return None if the destination is not in the list of available cities. "
-            "If the destination is in the list, return the correct destination from the list.\n"
+            "Determine if the user's input corresponds to any city in the list, even if it's an abbreviation or shorthand. "
+            "If it matches, return the full correct city name from the list. "
+            "If it does not correspond to any city in the list, return None.\n"
             "{format_instructions}"
         )
 
 
         response_schemas = [
-            ResponseSchema(name="correct_destination", description="Correct destination if invalid.")
+            ResponseSchema(name="correct_destination", description="Corrected destination")
         ]
         output_parser = StructuredOutputParser.from_response_schemas(response_schemas)
         format_instructions = output_parser.get_format_instructions()
@@ -178,10 +180,17 @@ def book_ticket(llm, state):
         bot_message = "My sincere apologies but currently we don't opearate at that destination. Is there anything else I can help you with?"
         print(f"Bot: {bot_message}")
     else:
-        print(f"Bot: Your options are {FLIGHT_DATA[destination]}")
+        flights = FLIGHT_DATA[destination]
+        print(f"Bot: Your options are ")
+        pprint(flights)
+        selection = input("Please select a flight from the above options: ")
+        flight, type = selection.split(".")
+        if type.lower() == "o":
+            price = flights[flight]['price']['oneway']
+        elif type.lower() == "r":
+            price = flights[flight]['price']['roundtrip']
+        new_state["ticket_booking"]["flight"] = flights[flight]
+        new_state.setdefault("check_in", {}).setdefault("passenger_details", {})["type"] = "domestic"
+        new_state['check_in']['passenger_details']['seat_no'] = None
+        new_state["amount"] += price
     return new_state
-
-# def destination(llm, state):
-#     state = handle_node_entry(state, "destination_node")
-#     new_state, result = collect_field(llm, state, "destination", node="book_ticket_node")
-#     return new_state

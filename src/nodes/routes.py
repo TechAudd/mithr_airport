@@ -56,7 +56,13 @@ def seat_preference_router(state):
     return "seat_preference_node"
 
 def booking_router(state):
-    pass
+    ticket_type = state.get("ticket_booking", {}).get("ticket_type")
+    destination = state.get("ticket_booking", {}).get("destination")
+    flight = state.get("ticket_booking", {}).get("flight")
+    if ticket_type is None or destination is None or flight is None:
+        return "book_ticket_node"
+    else:
+        return "check_in_passport_node"
 
 def luggage_router(state):
-    pass
+    return "payment_gateway_node"

@@ -65,9 +65,8 @@ workflow.add_conditional_edges("check_in_booking_node", check_in_booking_router,
 workflow.add_conditional_edges("check_in_passport_node", check_in_passport_router, ["check_in_passport_node", "seat_preference_node"])
 workflow.add_conditional_edges("seat_preference_node", seat_preference_router, ["seat_preference_node", "luggage_checkin_node"])
 workflow.add_edge("luggage_checkin_node", "payment_gateway_node")
-# workflow.add_conditional_edges("book_ticket_node", booking_router, ["book_ticket_node", "check_in_passport_node"])
-# workflow.add_conditional_edges("luggage_checkin_node", luggage_router, ["payment_gateway_node", "general_query_node"])
-workflow.add_edge("book_ticket_node", "payment_gateway_node")
+workflow.add_conditional_edges("book_ticket_node", booking_router, ["book_ticket_node", "check_in_passport_node"])
+workflow.add_conditional_edges("luggage_checkin_node", luggage_router, ["payment_gateway_node", "luggage_checkin_node"])
 workflow.add_edge("payment_gateway_node", "general_query_node")
 
 compiled_workflow = workflow.compile()
@@ -82,7 +81,7 @@ state = State(
     history=[],
     retry_count=0
 )
-# compiled_workflow.get_graph().draw_png("workflow_graph.png")
+compiled_workflow.get_graph().draw_png("workflow_graph.png")
 
 
 @traceable(run_type="chain", name="BookingWorkflow")
