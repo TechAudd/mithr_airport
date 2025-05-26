@@ -9,6 +9,7 @@ import pdb
 from utils.vlm_extraction import extract_details_with_vllm
 from utils.helper import ask_llm_for_question, extract_field_and_refusal_with_json
 from utils.tts import botspeak
+from utils.stt import voice_input
 from models.userstate import State
 
 with open("conf/fields.json", "r") as file:
@@ -30,7 +31,7 @@ def collect_field(llm, state, field, options=None, greeting=False, node=None, re
     field_desc += f" from the following options: {str(options)}" if options else ""
     question = ask_llm_for_question(llm, field, field_desc, state, retry_count, greeting)
     botspeak(question)
-    user_input = input("You: ")
+    user_input = voice_input("You: ")
     history.append(AIMessage(content=question))
     history.append(HumanMessage(content=user_input))
     value, refused = extract_field_and_refusal_with_json(llm, field, field_desc, user_input)
