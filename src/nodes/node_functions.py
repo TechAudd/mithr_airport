@@ -8,6 +8,7 @@ import pdb
 
 from utils.vlm_extraction import extract_details_with_vllm
 from utils.helper import ask_llm_for_question, extract_field_and_refusal_with_json
+from utils.tts import botspeak
 from models.userstate import State
 
 with open("conf/fields.json", "r") as file:
@@ -28,7 +29,7 @@ def collect_field(llm, state, field, options=None, greeting=False, node=None, re
     field_desc = FIELDS[field]["description"]
     field_desc += f" from the following options: {str(options)}" if options else ""
     question = ask_llm_for_question(llm, field, field_desc, state, retry_count, greeting)
-    print("Bot:", question)
+    botspeak(question)
     user_input = input("You: ")
     history.append(AIMessage(content=question))
     history.append(HumanMessage(content=user_input))
@@ -36,10 +37,10 @@ def collect_field(llm, state, field, options=None, greeting=False, node=None, re
     if refused or not value or (value == "None" and not optional):
         retry_count = state.get("retry_count", 0) + 1
         if retry_count == 2:
-            print("Bot: This information is required to proceed further and chat will terminate if not provided. Could you please provide it?")
+            botspeak("This information is required to proceed further and chat will terminate if not provided. Could you please provide it?")
             history.append(AIMessage(content="This information is required to proceed. Could you please provide it?"))
         elif retry_count > 2:
-            print("Bot: Exiting the chat as the information is required to proceed further.")
+            botspeak("Exiting the chat as the information is required to proceed further.")
             sys.exit(0)
         return {**state, "retry_count": retry_count, "history": history}, None
     if node:
@@ -56,7 +57,7 @@ def collect_field_visual(llm, state, node, field):
     history = state.get("history", [])
     field_desc = FIELDS[field]["description"]
     question = ask_llm_for_question(llm, field, field_desc, state, retry_count)
-    print("Bot:", question)
+    botspeak(question)
     image_path = input("Please provide the path to the image: ")
     history.append(AIMessage(content=question))
     details = extract_details_with_vllm(image_path, data_format=FIELDS[field]["data_format"])
@@ -66,10 +67,10 @@ def collect_field_visual(llm, state, node, field):
         retry_count = state.get("retry_count", 0) + 1
         if retry_count == 2:
             bot_dialog = "This information is required to proceed further. Could you please recapture the image properly?"
-            print(f"Bot: {bot_dialog}")
+            botspeak(bot_dialog)
             history.append(AIMessage(content=bot_dialog))
         elif retry_count > 2:
-            print("Bot: Exiting the chat as the information is required to proceed further.")
+            botspeak("Exiting the chat as the information is required to proceed further.")
             sys.exit(0)
         return {**state, "retry_count": retry_count, "history": history}, None
     state[node][field] = details
@@ -178,10 +179,10 @@ def book_ticket(llm, state):
     if destination is None:
         new_state["ticket_booking"]["destination"] = None
         bot_message = "My sincere apologies but currently we don't opearate at that destination. Is there anything else I can help you with?"
-        print(f"Bot: {bot_message}")
+        botspeak(bot_message)
     else:
         flights = FLIGHT_DATA[destination]
-        print(f"Bot: Your options are ")
+        botspeak("Your options are listed below")
         pprint(flights)
         selection = input("Please select a flight from the above options: ")
         flight, type = selection.split(".")

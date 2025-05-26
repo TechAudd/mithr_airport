@@ -2,6 +2,8 @@ from pprint import pprint as pp
 from langgraph.graph import END
 import json
 
+from utils.tts import botspeak
+
 with open("conf/mock.json", "r") as file:
     MOCK_DATA = json.load(file)
 
@@ -23,7 +25,7 @@ def service_choice_router(state):
     elif service == "general_query":
         return "general_query_node"
     else:
-        print("Bot: Please specify with what do you need assistance with.")
+        botspeak("Please specify with what do you need assistance with.")
         return "service_choice"
 
 
