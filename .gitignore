@@ -4,3 +4,5 @@ __pycache__/
 test/
 *.mp3
 *.wav
+a2f/
+a2f-visualizer/

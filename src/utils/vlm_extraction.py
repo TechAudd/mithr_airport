@@ -1,5 +1,7 @@
 import base64
+import os
 from langchain_openai import ChatOpenAI
+from langchain_openai import AzureChatOpenAI
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
 
 
@@ -31,10 +33,19 @@ def extract_details_with_vllm(image_path, data_format):
         }
     ]
 
-    llm = ChatOpenAI(
-        model="Qwen/Qwen2-VL-7B-Instruct",
-        openai_api_key="EMPTY",
-        openai_api_base="http://10.45.100.6:8000/v1",
+    # llm = ChatOpenAI(
+    #     model="Qwen/Qwen2-VL-7B-Instruct",
+    #     openai_api_key="EMPTY",
+    #     openai_api_base="http://10.45.100.6:8000/v1",
+    #     max_tokens=128,
+    #     temperature=0.0,
+    # )
+    llm = AzureChatOpenAI(
+        deployment_name=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
+        model=os.environ.get("AZURE_OPENAI_MODEL_NAME", "gpt-4-vision-preview"),
+        api_key=os.environ["AZURE_OPENAI_API_KEY"],
+        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+        api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
         max_tokens=128,
         temperature=0.0,
     )
