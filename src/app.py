@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import os
 from langchain_openai import AzureChatOpenAI
 
@@ -6,8 +7,19 @@ from models.userstate import State
 from models.chatmodel import ChatModel
 from session_store import create_session, get_session, update_session, delete_session, get_all_sessions
 from utils.executor import execute_node
+from routes.nvidiaa2f import a2f_router
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Or specify your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(a2f_router, tags=["a2f"])
+
 llm = AzureChatOpenAI(
     deployment_name=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
     model=os.environ.get("AZURE_OPENAI_MODEL_NAME", "gpt-4o-mini"),
