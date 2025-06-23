@@ -1,6 +1,18 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_openai import AzureChatOpenAI
+import os
 import json
-import pdb
+
+json_llm = AzureChatOpenAI(
+    deployment_name=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
+    model=os.environ.get("AZURE_OPENAI_MODEL_NAME", "gpt-4o-mini"),
+    api_key=os.environ["AZURE_OPENAI_API_KEY"],
+    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+    api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
+    max_tokens=128,
+    temperature=0.0,
+    model_kwargs={"response_format": {"type": "json_object"}}
+)
 
 
 def ask_llm_for_question(llm, field, field_description, state, retry_count=0, greeting=False):
@@ -31,9 +43,11 @@ def ask_llm_for_question(llm, field, field_description, state, retry_count=0, gr
         MessagesPlaceholder(variable_name="history"),
         ("human", f"Please ask the user ONLY for their {field_description} now. Don't discuss anything else.")
     ])
-
+    
     response = prompt | llm
     history = state.get("history", [])
+    formatted_prompt = prompt.format_messages(history=history)
+    # print("Formatted Prompt:", formatted_prompt)
     bot_message = response.invoke({"history": history}).content
     return bot_message
 
@@ -51,7 +65,7 @@ def extract_field_and_refusal_with_json(llm, field, field_description, user_inpu
 
     Message: "{user_input}"
     """
-    result = llm.invoke(prompt)
+    result = json_llm.invoke(prompt)
     try:
         data = json.loads(result.content)
         return data.get(field), data.get("refused", False)

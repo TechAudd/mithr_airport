@@ -10,3 +10,5 @@ class State(TypedDict):
     history: list[dict]
     retry_count: int
     current_node: str
+    next_question: str
+    session_id: str
