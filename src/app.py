@@ -10,6 +10,10 @@ from utils.executor import execute_node
 from routes.nvidiaa2f import a2f_router
 
 app = FastAPI()
+
+
+app.include_router(a2f_router, tags=["a2f"])
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Or specify your frontend URL
@@ -17,8 +21,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.include_router(a2f_router, tags=["a2f"])
 
 llm = AzureChatOpenAI(
     deployment_name=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
