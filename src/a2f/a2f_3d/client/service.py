@@ -168,9 +168,10 @@ async def read_from_stream(stream):
             print(f"Received status message with value: '{status.message}'")
            
 
-async def write_to_stream(stream, config_path, audio_file_path):
+async def write_to_stream(stream, config_path, audio_file_path=None, data=None, samplerate=None):
     # Read the content of the audio file, extracting sample rate and data.
-    samplerate, data = scipy.io.wavfile.read(audio_file_path)
+    if data is None or samplerate is None:
+        samplerate, data = scipy.io.wavfile.read(audio_file_path)
     config = None
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)

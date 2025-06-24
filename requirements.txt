@@ -1,0 +1,15 @@
+uvicorn==0.34.3
+fastapi==0.115.13
+langchain==0.3.26
+langchain-openai==0.3.24
+langgraph==0.4.8
+elevenlabs==2.4.0
+pydub==0.25.1
+numpy==1.26.4
+scipy==1.13.0
+grpcio==1.64.0
+protobuf==4.24.1
+PyYAML==6.0.1
+pandas==2.2.2
+torch==2.7.1
+torchaudio==2.7.1
