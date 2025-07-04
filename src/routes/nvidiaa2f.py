@@ -4,7 +4,7 @@ import os
 import asyncio
 import time
 from uuid import uuid4
-from fastapi import APIRouter, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from fastapi.responses import FileResponse
 from elevenlabs.client import ElevenLabs
 from pydub import AudioSegment
@@ -24,6 +24,7 @@ if elabs_key is None:
 client = ElevenLabs(api_key=elabs_key)
 
 def cleanup_files(*paths):
+    time.sleep(2)
     for path in paths:
         try:
             if os.path.exists(path):
@@ -33,6 +34,36 @@ def cleanup_files(*paths):
                     os.remove(path)
         except Exception as e:
             print(f"Error cleaning up {path}: {e}")
+
+def optimize_audio_collection_and_export(audio_stream, rate=24000):
+    """
+    Optimized audio collection that eliminates the expensive join operation
+    by using a pre-allocated buffer and direct memory copying
+    """
+    # First pass: collect chunks and calculate total size
+    chunks = []
+    total_size = 0
+    
+    for chunk in audio_stream:
+        chunks.append(chunk)
+        total_size += len(chunk)
+    
+    if total_size == 0:
+        return rate, np.array([], dtype=np.int16)
+    
+    # Pre-allocate buffer with exact size needed
+    buffer = bytearray(total_size)
+    
+    # Second pass: copy chunks directly into buffer
+    offset = 0
+    for chunk in chunks:
+        chunk_len = len(chunk)
+        buffer[offset:offset + chunk_len] = chunk
+        offset += chunk_len
+    
+    # Convert directly to numpy array
+    audio_array = np.frombuffer(buffer, dtype=np.int16)
+    return rate, audio_array
 
 @a2f_router.post("/text2animation")
 async def process_audio_to_animation(
@@ -51,19 +82,9 @@ async def process_audio_to_animation(
     )
     end_time = time.perf_counter()
     print(f"Audio generation took {end_time - start_time:.6f} seconds")
-    audio_data = b''
-    start_time = time.perf_counter()
-    for chunk in audio_stream:
-        audio_data += chunk
-    buffer = io.BytesIO()
-    with wave.open(buffer, "wb") as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)
-        wf.setframerate(24000)
-        wf.writeframes(audio_data)
 
-    buffer.seek(0)
-    rate, data = wavfile.read(buffer)
+    start_time = time.perf_counter()
+    rate, data = optimize_audio_collection_and_export(audio_stream)
     end_time = time.perf_counter()
     print(f"Audio export took {end_time - start_time:.6f} seconds")
     apikey = os.getenv("NVIDIA_NIM_API_KEY")
@@ -80,7 +101,7 @@ async def process_audio_to_animation(
     stream = stub.ProcessAudioStream()
     write = asyncio.create_task(a2f_3d_service.write_to_stream(stream, config_file, data=data, samplerate=rate))
     read = asyncio.create_task(a2f_3d_service.read_from_stream(stream))
-
+    
     await write
     await read
     end_time = time.perf_counter()
@@ -89,6 +110,8 @@ async def process_audio_to_animation(
     path = read.result()
     if path:
         zip_path = shutil.make_archive("animation", 'zip', path)
+        if not os.path.exists(zip_path) or os.path.getsize(zip_path) == 0:
+            raise HTTPException(status_code=500, detail="Failed to create zip archive.")
         background_tasks.add_task(cleanup_files, zip_path, path)
         return FileResponse(
             zip_path,
