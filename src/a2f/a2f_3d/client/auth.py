@@ -18,11 +18,12 @@ from pathlib import Path
 import os
 from typing import List, Optional, Tuple, Union
 
+
 def create_channel(ssl_cert: Optional[Union[str, os.PathLike]] = None,
-        uri= "grpc.nvcf.nvidia.com:443", use_ssl: bool = False, metadata: Optional[List[Tuple[str, str]]] = None) -> grpc.Channel:
+                   uri="grpc.nvcf.nvidia.com:443", use_ssl: bool = False, metadata: Optional[List[Tuple[str, str]]] = None) -> grpc.Channel:
     def metadata_callback(context, callback):
         callback(metadata, None)
-        
+
     if ssl_cert is not None or use_ssl:
         root_certificates = None
         if ssl_cert is not None:
@@ -37,6 +38,7 @@ def create_channel(ssl_cert: Optional[Union[str, os.PathLike]] = None,
     else:
         channel = grpc.aio.insecure_channel(uri)
     return channel
+
 
 class Auth:
     def __init__(

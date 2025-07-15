@@ -23,6 +23,7 @@ if elabs_key is None:
     raise ValueError("Please set the ELEVENLABS_API_KEY environment variable.")
 client = ElevenLabs(api_key=elabs_key)
 
+
 def cleanup_files(*paths):
     time.sleep(2)
     for path in paths:
@@ -35,6 +36,7 @@ def cleanup_files(*paths):
         except Exception as e:
             print(f"Error cleaning up {path}: {e}")
 
+
 def optimize_audio_collection_and_export(audio_stream, rate=24000):
     """
     Optimized audio collection that eliminates the expensive join operation
@@ -43,27 +45,28 @@ def optimize_audio_collection_and_export(audio_stream, rate=24000):
     # First pass: collect chunks and calculate total size
     chunks = []
     total_size = 0
-    
+
     for chunk in audio_stream:
         chunks.append(chunk)
         total_size += len(chunk)
-    
+
     if total_size == 0:
         return rate, np.array([], dtype=np.int16)
-    
+
     # Pre-allocate buffer with exact size needed
     buffer = bytearray(total_size)
-    
+
     # Second pass: copy chunks directly into buffer
     offset = 0
     for chunk in chunks:
         chunk_len = len(chunk)
         buffer[offset:offset + chunk_len] = chunk
         offset += chunk_len
-    
+
     # Convert directly to numpy array
     audio_array = np.frombuffer(buffer, dtype=np.int16)
     return rate, audio_array
+
 
 @a2f_router.post("/text2animation")
 async def process_audio_to_animation(
@@ -101,7 +104,7 @@ async def process_audio_to_animation(
     stream = stub.ProcessAudioStream()
     write = asyncio.create_task(a2f_3d_service.write_to_stream(stream, config_file, data=data, samplerate=rate))
     read = asyncio.create_task(a2f_3d_service.read_from_stream(stream))
-    
+
     await write
     await read
     end_time = time.perf_counter()

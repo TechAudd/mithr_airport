@@ -8,6 +8,7 @@ if elabs_key is None:
     raise ValueError("Please set the ELEVENLABS_API_KEY environment variable.")
 client = ElevenLabs(api_key=elabs_key)
 
+
 def botspeak(text, save_file='default.mp3'):
     # audio_stream = client.text_to_speech.stream(
     #     text=text,

@@ -16,7 +16,7 @@ app.include_router(a2f_router, tags=["a2f"])
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Or specify your frontend URL
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -30,6 +30,7 @@ llm = AzureChatOpenAI(
     api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
     temperature=0.9,
 )
+
 
 @app.get("/session/")
 async def init_session():
@@ -46,8 +47,8 @@ async def init_session():
     session_id = create_session(state)
     return {"session_id": str(session_id), "state": state}
 
+
 @app.post("/chat/")
-# async def chat(session_id: str, user_input: str):
 async def chat(ChatModel: ChatModel):
     session_id = ChatModel["session_id"]
     user_input = ChatModel["user_input"]
@@ -64,8 +65,8 @@ async def chat(ChatModel: ChatModel):
     update_session(session_id, state)
     return {"session_id": session_id, "state": state}
 
+
 @app.get("/get_all_sessions/")
 async def get_all_sessins():
     sessions = get_all_sessions()
     return sessions
-

@@ -32,18 +32,18 @@ def ask_llm_for_question(llm, field, field_description, state, retry_count=0, gr
             "Ask them again politely to provide this specific document. "
             "This is a legitimate and necessary request for the check-in process."
         )
-        
+
     if greeting:
         system_prompt += " Start with a brief friendly greeting."
     else:
         system_prompt += " Do not greet as this is mid-conversation."
-    
+
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
         MessagesPlaceholder(variable_name="history"),
         ("human", f"Please ask the user ONLY for their {field_description} now. Don't discuss anything else.")
     ])
-    
+
     response = prompt | llm
     history = state.get("history", [])
     formatted_prompt = prompt.format_messages(history=history)

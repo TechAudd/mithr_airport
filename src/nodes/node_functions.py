@@ -9,8 +9,6 @@ from utils.vlm_extraction import extract_details_with_vllm
 from utils.helper import ask_llm_for_question, extract_field_and_refusal_with_json
 from utils.tts import botspeak
 from session_store import delete_session
-# from utils.stt0 import voice_input
-from utils.stt import SpeechToText
 from models.userstate import State
 
 with open("conf/fields.json", "r") as file:
@@ -22,7 +20,6 @@ with open("conf/mock.json", "r") as file:
 with open("conf/output.json", "r") as file:
     FLIGHT_DATA = json.load(file)
 
-stt = SpeechToText()
 
 def collect_field(llm, state, field, options=None, greeting=False, node=None, retry_count=None, optional=False, user_input=None):
     if type(state) is not dict:
@@ -70,7 +67,7 @@ def collect_field_visual(llm, state, node, field, user_input=None):
         history.append(AIMessage(content=question))
         botspeak(question)
         return {**state, "next_question": question}, None
-        
+
     print("Please provide the path to the image: ")
     image_path = user_input
     details = extract_details_with_vllm(image_path, data_format=FIELDS[field]["data_format"])
@@ -144,6 +141,7 @@ def seat_preference(llm, state, user_input=None):
         return new_state
     return state
 
+
 def check_destination(llm, state):
     cities = list(FLIGHT_DATA.keys())
     destination = state["ticket_booking"]["destination"]
@@ -163,7 +161,6 @@ def check_destination(llm, state):
             "{format_instructions}"
         )
 
-
         response_schemas = [
             ResponseSchema(name="correct_destination", description="Corrected destination")
         ]
@@ -172,9 +169,9 @@ def check_destination(llm, state):
         chain = prompt | llm | output_parser
 
         response = chain.invoke({
-            "destination":destination,
-            "cities_str":cities_str,
-            "format_instructions":format_instructions
+            "destination": destination,
+            "cities_str": cities_str,
+            "format_instructions": format_instructions
         })
         if response["correct_destination"] is None:
             return None

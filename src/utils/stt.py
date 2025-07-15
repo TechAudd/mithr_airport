@@ -9,6 +9,7 @@ import wave
 import pyaudio
 import os
 
+
 class SpeechToText:
     def __init__(self, whisper_model_size="small"):
         self._ = 0

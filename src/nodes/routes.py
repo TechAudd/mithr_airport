@@ -57,6 +57,7 @@ def seat_preference_router(state):
         return "luggage_checkin_node"
     return "seat_preference_node"
 
+
 def booking_router(state):
     ticket_type = state.get("ticket_booking", {}).get("ticket_type")
     destination = state.get("ticket_booking", {}).get("destination")
@@ -65,6 +66,7 @@ def booking_router(state):
         return "book_ticket_node"
     else:
         return "check_in_passport_node"
+
 
 def luggage_router(state):
     return "payment_gateway_node"

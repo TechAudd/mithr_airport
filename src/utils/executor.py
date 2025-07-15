@@ -1,11 +1,12 @@
-import nodes.node_functions as node_functions
-import nodes.routes as routes
+from nodes import node_functions, routes
+
 
 def get_func_and_router(node_name):
     base = node_name.replace("_node", "")
     func = getattr(node_functions, base, None)
     router = getattr(routes, f"{base}_router", None)
     return func, router
+
 
 def execute_node(node_name, llm, state, user_input=None):
     func, router = get_func_and_router(node_name)

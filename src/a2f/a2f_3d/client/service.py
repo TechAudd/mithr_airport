@@ -13,7 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse, asyncio, os, grpc, scipy, numpy, yaml, pandas, warnings
+import argparse
+import asyncio
+import os
+import grpc
+import scipy
+import numpy
+import yaml
+import pandas
+import warnings
 from sys import stderr
 from datetime import datetime
 from nvidia_ace.animation_data.v1_pb2 import AnimationData, AnimationDataStreamHeader
@@ -31,6 +39,7 @@ CHANNEL_COUNT = 1
 # Audio format, only PCM is supported.
 AUDIO_FORMAT = AudioHeader.AUDIO_FORMAT_PCM
 
+
 def get_audio_bit_format(audio_header: AudioHeader):
     """
     Reads the audio_header parameters and returns the write type to interpret
@@ -41,6 +50,7 @@ def get_audio_bit_format(audio_header: AudioHeader):
         if audio_header.bits_per_sample == 16:
             return numpy.int16
     return None
+
 
 def save_audio_data_to_file(outdir: str, audio_header: AudioHeader, audio_buffer: bytes):
     """
@@ -53,7 +63,7 @@ def save_audio_data_to_file(outdir: str, audio_header: AudioHeader, audio_buffer
         print("Error while downloading data, unknown format for audio output", file=stderr)
         return
 
-    audio_data_to_save = numpy.frombuffer(audio_buffer, dtype=dtype) 
+    audio_data_to_save = numpy.frombuffer(audio_buffer, dtype=dtype)
     # Write the audio data output as a wav file.
     scipy.io.wavfile.write(f"{outdir}/out.wav", audio_header.samples_per_second, audio_data_to_save)
 
@@ -69,7 +79,7 @@ def parse_emotion_data(animation_data, emotion_key_frames):
 
     They are grouped into `emotion key frames` which are a timestamp as well as emotion parameters.
     """
-    emotion_aggregate: EmotionAggregate = EmotionAggregate() 
+    emotion_aggregate: EmotionAggregate = EmotionAggregate()
     # Metadata is an Any type, try to unpack it into an EmotionAggregate object
     if animation_data.metadata["emotion_aggregate"] and animation_data.metadata["emotion_aggregate"].Unpack(emotion_aggregate):
         for emotion_with_timecode in emotion_aggregate.a2e_output:
@@ -88,9 +98,10 @@ def parse_emotion_data(animation_data, emotion_key_frames):
                 "emotion_values": dict(emotion_with_timecode.emotion),
             })
 
+
 async def read_from_stream(stream):
     # List of blendshapes names recovered from the model data in the AnimationDataStreamHeader
-    bs_names = []    
+    bs_names = []
     # List of animation key frames, meaning a time code and the values of the blendshapes
     animation_key_frames = []
     # Audio buffer that contains the result
@@ -166,7 +177,7 @@ async def read_from_stream(stream):
                 print("If you have an error related to audio input limits, you can adjust the microservice advanced configuration file to fix this issue.")
 
             print(f"Received status message with value: '{status.message}'")
-           
+
 
 async def write_to_stream(stream, config_path, audio_file_path=None, data=None, samplerate=None):
     # Read the content of the audio file, extracting sample rate and data.
@@ -241,4 +252,3 @@ async def write_to_stream(stream, config_path, audio_file_path=None, data=None, 
     # This is necessary to obtain the status code at the end of the generation of
     # blendshapes. This status code tells you about the end of animation data stream.
     await stream.write(AudioStream(end_of_audio=AudioStream.EndOfAudio()))
-    
