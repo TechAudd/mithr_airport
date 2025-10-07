@@ -1,6 +1,6 @@
 {
     "name": {
-        "description": "your full name as it appears on government issued id is required for moving forward",
+        "description": "your full name as it appears on government issued id is required for moving forward before procceding with anything else",
         "optional": false
     },
     "service_type": {

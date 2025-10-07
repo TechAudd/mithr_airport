@@ -30,7 +30,7 @@ def collect_field(llm, state, field, options=None, greeting=False, node=None, re
     field_desc = FIELDS[field]["description"]
     field_desc += f" from the following options: {str(options)}" if options else ""
     if not user_input:
-        question = ask_llm_for_question(llm, field, field_desc, state, retry_count, greeting)
+        question = ask_llm_for_question(llm, field, field_desc, state, retry_count, greeting, conversation_history=history)
         botspeak(question)
         history.append(AIMessage(content=question))
         return {**state, "next_question": question}, None
@@ -63,7 +63,7 @@ def collect_field_visual(llm, state, node, field, user_input=None):
     history = state.get("history", [])
     field_desc = FIELDS[field]["description"]
     if not user_input:
-        question = ask_llm_for_question(llm, field, field_desc, state, retry_count)
+        question = ask_llm_for_question(llm, field, field_desc, state, retry_count, conversation_history=history)
         history.append(AIMessage(content=question))
         botspeak(question)
         return {**state, "next_question": question}, None

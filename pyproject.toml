@@ -1,0 +1,21 @@
+[project]
+name = "mithr-airport"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "elevenlabs>=2.16.0",
+    "fastapi>=0.118.0",
+    "langchain>=0.3.27",
+    "langchain-openai>=0.3.35",
+    "numpy>=2.3.3",
+    "nvidia-ace",
+    "pandas>=2.3.3",
+    "python-dotenv>=1.1.1",
+    "scipy>=1.16.2",
+    "uvicorn>=0.37.0",
+]
+
+[tool.uv.sources]
+nvidia-ace = { path = "nvidia_ace-1.2.0-py3-none-any.whl" }

@@ -2,6 +2,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import AzureChatOpenAI
 import os
 import json
+import time
 
 json_llm = AzureChatOpenAI(
     deployment_name=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
@@ -15,8 +16,11 @@ json_llm = AzureChatOpenAI(
 )
 
 
-def ask_llm_for_question(llm, field, field_description, state, retry_count=0, greeting=False):
-
+def ask_llm_for_question(llm, field, field_description, state, retry_count=0, greeting=False, conversation_history=None):
+    if conversation_history is None:
+        conversation_history = []
+    else:
+        conversation_history = conversation_history[-5:]
     if retry_count == 0:
         system_prompt = (
             "You are a helpful assistant at an airport check-in counter. "
@@ -37,13 +41,15 @@ def ask_llm_for_question(llm, field, field_description, state, retry_count=0, gr
         system_prompt += " Start with a brief friendly greeting."
     else:
         system_prompt += " Do not greet as this is mid-conversation."
-
+    
+    system_prompt += "\n\nTime now: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    system_prompt += "\n\nConversation history:\n" + "\n".join([f"User: {msg.content}" if msg.type == "human" else f"Bot: {msg.content}" for msg in conversation_history])
+    system_prompt += "\n\nUse the conversation history to make the question more personal. Make sure that adding personal touches doesnt make it sound unnatural or forced, add them only when needed."
+    system_prompt += " Check if the generated question sounds natural and human if attached to the conversation history."
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
-        MessagesPlaceholder(variable_name="history"),
         ("human", f"Please ask the user ONLY for their {field_description} now. Don't discuss anything else.")
     ])
-
     response = prompt | llm
     history = state.get("history", [])
     formatted_prompt = prompt.format_messages(history=history)

@@ -1,17 +1,12 @@
 import shutil
-import io
 import os
 import asyncio
 import time
-from uuid import uuid4
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from fastapi.responses import FileResponse
 from elevenlabs.client import ElevenLabs
-from pydub import AudioSegment
 from nvidia_ace.services.a2f_controller.v1_pb2_grpc import A2FControllerServiceStub
-import wave
 import numpy as np
-from scipy.io import wavfile
 
 import a2f.a2f_3d.client.auth as a2f_3d_auth
 import a2f.a2f_3d.client.service as a2f_3d_service

@@ -6,3 +6,4 @@ test/
 *.wav
 /a2f/
 a2f-visualizer/
+.venv/

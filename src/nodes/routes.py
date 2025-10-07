@@ -1,5 +1,3 @@
-from pprint import pprint as pp
-from langgraph.graph import END
 import json
 
 from utils.tts import botspeak
@@ -38,7 +36,7 @@ def check_in_booking_router(state):
     if passenger_details:
         state["check_in"]["passenger_details"] = passenger_details
     else:
-        return END
+        return "__end__"
     return "check_in_passport_node"
 
 

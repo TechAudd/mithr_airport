@@ -13,21 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
-import asyncio
 import os
 import grpc
 import scipy
 import numpy
 import yaml
 import pandas
-import warnings
 from sys import stderr
 from datetime import datetime
 from nvidia_ace.animation_data.v1_pb2 import AnimationData, AnimationDataStreamHeader
 from nvidia_ace.a2f.v1_pb2 import AudioWithEmotion, EmotionPostProcessingParameters, FaceParameters, BlendShapeParameters
 from nvidia_ace.audio.v1_pb2 import AudioHeader
-from nvidia_ace.services.a2f_controller.v1_pb2_grpc import A2FControllerServiceStub
 from nvidia_ace.controller.v1_pb2 import AudioStream, AudioStreamHeader
 from nvidia_ace.emotion_with_timecode.v1_pb2 import EmotionWithTimeCode
 from nvidia_ace.emotion_aggregate.v1_pb2 import EmotionAggregate

@@ -2,10 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from langchain_openai import AzureChatOpenAI
+from dotenv import load_dotenv
 
+load_dotenv()
 from models.userstate import State
 from models.chatmodel import ChatModel
-from session_store import create_session, get_session, update_session, delete_session, get_all_sessions
+from session_store import create_session, get_session, update_session, get_all_sessions
 from utils.executor import execute_node
 from routes.nvidiaa2f import a2f_router
 
