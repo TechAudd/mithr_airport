@@ -21,12 +21,12 @@ while True:
     }
     response = requests.post(
         'http://127.0.0.1:8000/chat/',
-        params=params,
+        json=params,
         headers={'accept': 'application/json'}
     )
     if response.status_code == 200:
         data = response.json()
         print(f"Bot: {data['state']['next_question']}")
     else:
-        print("Error:", response.json().get('error', 'Unknown error occurred.'))
+        print("Error:", response.json())
 

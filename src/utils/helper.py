@@ -16,7 +16,7 @@ json_llm = AzureChatOpenAI(
 )
 
 
-def ask_llm_for_question(llm, field, field_description, state, retry_count=0, greeting=False, conversation_history=None):
+def ask_llm_for_question(llm, field, field_description, state, retry_count=0, greeting=False, conversation_history=None, small_talk_response=None):
     if conversation_history is None:
         conversation_history = []
     else:
@@ -41,6 +41,18 @@ def ask_llm_for_question(llm, field, field_description, state, retry_count=0, gr
         system_prompt += " Start with a brief friendly greeting."
     else:
         system_prompt += " Do not greet as this is mid-conversation."
+
+    if small_talk_response:
+        print(f"Small talk response in ask_llm_for_question: {small_talk_response}")
+        system_prompt += (
+            "\n\nThe user just made a small talk comment. Your friendly short reply to that is:\n"
+            f"'{small_talk_response}'\n\n"
+            "Begin your entire response with this small talk reply. Then, transition smoothly using a phrase like "
+            "'By the way', 'Also', or 'Whenever you're ready' into politely asking for the required document. "
+            "Do NOT include a separate greeting as the small talk reply itself should serve as the friendly opening. "
+            "Your full response should be a single natural, coherent message."
+        )
+    system_prompt += "\nIf user asks for some other information give a funny response without offending them. BUT make sure to answer the question alongside asking for the required information."
     
     system_prompt += "\n\nTime now: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     system_prompt += "\n\nConversation history:\n" + "\n".join([f"User: {msg.content}" if msg.type == "human" else f"Bot: {msg.content}" for msg in conversation_history])

@@ -21,7 +21,7 @@ with open("conf/output.json", "r") as file:
     FLIGHT_DATA = json.load(file)
 
 
-def collect_field(llm, state, field, options=None, greeting=False, node=None, retry_count=None, optional=False, user_input=None):
+def collect_field(llm, state, field, options=None, greeting=False, node=None, retry_count=None, optional=False, user_input=None, small_talk_response=None):
     if type(state) is not dict:
         state = state[0]
     if retry_count is None:
@@ -30,7 +30,7 @@ def collect_field(llm, state, field, options=None, greeting=False, node=None, re
     field_desc = FIELDS[field]["description"]
     field_desc += f" from the following options: {str(options)}" if options else ""
     if not user_input:
-        question = ask_llm_for_question(llm, field, field_desc, state, retry_count, greeting, conversation_history=history)
+        question = ask_llm_for_question(llm, field, field_desc, state, retry_count, greeting, conversation_history=history, small_talk_response=small_talk_response)
         botspeak(question)
         history.append(AIMessage(content=question))
         return {**state, "next_question": question}, None
@@ -95,42 +95,42 @@ def handle_node_entry(state: State, node_name: str) -> State:
     return state
 
 
-def collect_name(llm, state, user_input=None):
+def collect_name(llm, state, user_input=None, small_talk_response=None):
     state = handle_node_entry(state, "collect_name")
-    new_state, result = collect_field(llm, state, "name", greeting=True, user_input=user_input)
+    new_state, result = collect_field(llm, state, "name", greeting=True, user_input=user_input, small_talk_response=small_talk_response)
     new_state["collect_name_result"] = result
     return new_state
 
 
-def service_choice(llm, state, user_input=None):
+def service_choice(llm, state, user_input=None, small_talk_response=None):
     state = handle_node_entry(state, "service_choice")
-    new_state, result = collect_field(llm, state, "service_type", user_input=user_input)
+    new_state, result = collect_field(llm, state, "service_type", user_input=user_input, small_talk_response=small_talk_response)
     new_state["service_choice_result"] = result
     new_state["service_value"] = (new_state.get("service") or "").lower()
     return new_state
 
 
-def check_in_booking(llm, state, user_input=None):
+def check_in_booking(llm, state, user_input=None, small_talk_response=None):
     state = handle_node_entry(state, "check_in_booking_node")
-    new_state, result = collect_field_visual(llm, state, "check_in", "booking_details", user_input=user_input)
+    new_state, result = collect_field(llm, state, "booking_details", node="check_in", user_input=user_input, small_talk_response=small_talk_response)
     return new_state
 
 
-def check_in_passport(llm, state, user_input=None):
+def check_in_passport(llm, state, user_input=None, small_talk_response=None):
     state = handle_node_entry(state, "check_in_passport_node")
     type = state.get("check_in", {}).get("passenger_details", {}).get("type")
     if type == "domestic":
-        new_state, result = collect_field_visual(llm, state, "check_in", "aadhar_details", user_input=user_input)
+        new_state, result = collect_field(llm, state, "aadhar_details", user_input=user_input, small_talk_response=small_talk_response)
     else:
-        new_state, result = collect_field_visual(llm, state, "check_in", "passport_details", user_input=user_input)
+        new_state, result = collect_field(llm, state, "passport_details", user_input=user_input, small_talk_response=small_talk_response)
     return new_state
 
 
-def seat_preference(llm, state, user_input=None):
+def seat_preference(llm, state, user_input=None, small_talk_response=None):
     state = handle_node_entry(state, "seat_preference_node")
     if not state['check_in']['passenger_details']['seat_no']:
         avilable_seats = MOCK_DATA['seats_data']['available']
-        new_state, result = collect_field(llm, state, "seat_no", avilable_seats, user_input=user_input)
+        new_state, result = collect_field(llm, state, "seat_no", avilable_seats, user_input=user_input, small_talk_response=small_talk_response)
         selected_seat = result
         if selected_seat is not None and selected_seat in avilable_seats:
             new_state["check_in"]["passenger_details"]["seat_no"] = result

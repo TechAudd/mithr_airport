@@ -29,10 +29,15 @@ def service_choice_router(state):
 
 def check_in_booking_router(state):
     booking_details = state.get("check_in", {}).get("booking_details")
-    if not booking_details or any(value is None for value in booking_details.values()):
-        return "check_in_booking_node"
+    if not booking_details:
+        if not isinstance(booking_details, str):
+            if any(value is None for value in booking_details.values()):
+                return "check_in_booking_node"
     MOCK = MOCK_DATA['passengers']
-    passenger_details = MOCK.get(booking_details.get("ticket_no"), {})
+    if not isinstance(booking_details, str):
+        passenger_details = MOCK.get(booking_details.get("ticket_no"), {})
+    else:
+        passenger_details = MOCK.get(booking_details, {})
     if passenger_details:
         state["check_in"]["passenger_details"] = passenger_details
     else:

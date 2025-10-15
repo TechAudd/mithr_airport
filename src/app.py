@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
-from langchain_openai import AzureChatOpenAI
+from langchain_openai import AzureChatOpenAI, ChatOpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -9,6 +9,7 @@ from models.userstate import State
 from models.chatmodel import ChatModel
 from session_store import create_session, get_session, update_session, get_all_sessions
 from utils.executor import execute_node
+from utils.small_talk import human_small_talk, is_small_talk
 from routes.nvidiaa2f import a2f_router
 
 app = FastAPI()
@@ -24,15 +25,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-llm = AzureChatOpenAI(
-    deployment_name=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
-    model=os.environ.get("AZURE_OPENAI_MODEL_NAME", "gpt-4o-mini"),
-    api_key=os.environ["AZURE_OPENAI_API_KEY"],
-    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-    api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
-    temperature=0.9,
-)
+# llm = AzureChatOpenAI(
+#     deployment_name=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
+#     model=os.environ.get("AZURE_OPENAI_MODEL_NAME", "gpt-4o-mini"),
+#     api_key=os.environ["AZURE_OPENAI_API_KEY"],
+#     azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+#     api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
+#     temperature=0.9,
+# )
 
+llm = ChatOpenAI(model="gpt-4o-mini", api_key=os.environ.get("OPENAI_API_KEY"), temperature=0.9)
 
 @app.get("/session/")
 async def init_session():
@@ -59,11 +61,14 @@ async def chat(ChatModel: ChatModel):
         return {"error": "Session not found"}
 
     state = session
+    response = None
+    if is_small_talk(user_input):
+        response = human_small_talk(user_input=user_input, chat_history=[])
 
     current_node = state.get("current_node", "collect_name")
-    state = execute_node(current_node, llm, state, user_input)
+    state = execute_node(current_node, llm, state, user_input, small_talk_response=response)
     next_node = state.get("current_node")
-    state = execute_node(next_node, llm, state)
+    state = execute_node(next_node, llm, state, small_talk_response=response)
     update_session(session_id, state)
     return {"session_id": session_id, "state": state}
 

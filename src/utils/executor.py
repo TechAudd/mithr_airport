@@ -8,12 +8,12 @@ def get_func_and_router(node_name):
     return func, router
 
 
-def execute_node(node_name, llm, state, user_input=None):
+def execute_node(node_name, llm, state, user_input=None, small_talk_response=None):
     func, router = get_func_and_router(node_name)
     next_node = None
 
     if func:
-        state = func(llm, state, user_input)
+        state = func(llm, state, user_input, small_talk_response)
         if user_input and router:
             next_node = router(state)
 
